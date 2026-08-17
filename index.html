@@ -94,6 +94,33 @@
   .chip-fear .chip-dot { background: #ec835a; }
   .chip-extreme .chip-dot { background: #d03b3b; }
 
+  .analysis-title { font-size: 15px; font-weight: 650; margin: 26px 0 8px; }
+  .analysis-note { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .analysis-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .an-title { font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .an-index { font-size: 11px; font-weight: 500; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
+  .an-body { font-size: 14px; line-height: 1.7; }
+  .an-body .sym { color: var(--text-secondary); font-size: 12px; }
+  .an-body b { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .analysis-card .up { color: var(--bad); }
+  .analysis-card .down { color: var(--good); }
+  .an-read { font-size: 12px; line-height: 1.6; color: var(--text-secondary); border-top: 1px solid var(--gridline); padding-top: 8px; margin-top: 2px; }
+  .an-read-label { display: inline-block; font-weight:600; color: var(--text-primary); background: var(--page); border: 1px solid var(--border); border-radius: 6px; padding: 0 6px; margin-right: 6px; font-size: 11px; }
+
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-top: 16px; }
+  .summary-title { font-size: 14px; font-weight: 650; margin: 0 0 8px; }
+  .summary-body { font-size: 15px; line-height: 1.85; }
+  .summary-body b { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .summary-body .up { color: var(--bad); }
+  .summary-body .down { color: var(--good); }
+  .cause-framework { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-top: 16px; }
+  .cause-framework h3 { font-size: 14px; font-weight: 650; margin: 0 0 12px; }
+  .cause-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 9px 22px; margin: 0; padding: 0; list-style: none; }
+  .cause-list li { font-size: 13px; line-height: 1.6; color: var(--text-secondary); padding-left: 16px; position: relative; }
+  .cause-list li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+  .cause-list li b { color: var(--text-primary); font-weight: 600; }
+
   .filter-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 12px; flex-wrap: wrap; }
   .legend { display: flex; gap: 18px; font-size: 13px; color: var(--text-secondary); }
   .legend-item { display: inline-flex; align-items: center; gap: 7px; }
@@ -161,6 +188,38 @@
     <section class="kpi-row" aria-label="当前指数">
       <div class="stat-tile" id="tile-VIX"></div>
       <div class="stat-tile" id="tile-VXN"></div>
+    </section>
+
+    <section class="analysis-section" aria-label="指数分析">
+      <h2 class="analysis-title">指数分析</h2>
+      <p class="analysis-note">每张卡片底部都注明了这个数字「反映什么」，直接看结论即可。</p>
+      <div class="analysis-grid">
+        <div class="analysis-card" id="an-percentile"></div>
+        <div class="analysis-card" id="an-deviation"></div>
+        <div class="analysis-card" id="an-spread"></div>
+        <div class="analysis-card" id="an-momentum"></div>
+        <div class="analysis-card" id="an-extreme"></div>
+      </div>
+
+      <div class="summary-card" id="an-summary"></div>
+
+      <div class="analysis-grid">
+        <div class="analysis-card" id="an-linkage"></div>
+        <div class="analysis-card" id="an-cause"></div>
+      </div>
+
+      <div class="cause-framework">
+        <h3>什么因素驱动 VIX / VXN 变化</h3>
+        <ul class="cause-list">
+          <li><b>股市下跌与不确定性</b>：VIX 与标普强负相关（约 −0.7~−0.8），是「买保险」的价格——股市跌时对冲需求激增，隐含波动率上升。</li>
+          <li><b>美联储政策与利率预期</b>：加息/降息预期的变化传导到股市波动，尤其影响久期长的成长股。</li>
+          <li><b>财报季与个股事件</b>：财报季尤其科技巨头的业绩意外，通过相关性传导到指数波动率（对 VXN 更敏感）。</li>
+          <li><b>宏观数据意外</b>：CPI、非农就业、GDP 等超预期/不及预期，引发短期跳升。</li>
+          <li><b>地缘政治与事件风险</b>：战争、选举、债务上限、疫情等黑天鹅，导致快速跳升。</li>
+          <li><b>期权市场供需结构</b>：波动率 ETF、波动率目标基金、结构化产品的对冲再平衡，影响 VIX 绝对水平和期限结构。</li>
+          <li><b>VIX 的两个特性</b>：均值回归（长期中枢约 19~20）与「慢涨快跌」（恐慌慢慢积累、消退很快）。</li>
+        </ul>
+      </div>
     </section>
 
     <div class="filter-row">
@@ -442,12 +501,246 @@ function renderUpdated() {
   document.getElementById("updated").textContent = "数据截至 " + fmtDateFull(last) + (upd ? " · " + upd : "");
 }
 
+function renderAnalysis() {
+  renderPercentile();
+  renderDeviation();
+  renderSpread();
+  renderMomentum();
+  renderExtreme();
+  renderSummary();
+  renderLinkage();
+  renderCause();
+}
+
+function rankPct(arr, v) {
+  let below = 0;
+  for (const x of arr) if (x < v) below++;
+  return below / arr.length;
+}
+
+function ma(arr, n) {
+  const s = arr.slice(-n);
+  return s.reduce((a, b) => a + b, 0) / s.length;
+}
+
+function chg(arr, n) {
+  const last = arr[arr.length - 1], prev = arr[arr.length - 1 - n];
+  return (last - prev) / prev * 100;
+}
+
+function windowStats(arr, n) {
+  const s = arr.slice(-n);
+  let hi = -Infinity, lo = Infinity;
+  for (const v of s) { hi = Math.max(hi, v); lo = Math.min(lo, v); }
+  const cur = arr[arr.length - 1];
+  const pos = (hi - lo) > 0 ? (cur - lo) / (hi - lo) * 100 : 0;
+  return { hi, lo, cur, pos };
+}
+
+function median(arr) {
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function spreadSeries(n) {
+  const vixMap = new Map(data.VIX.map(r => [r.date, r.close]));
+  const out = [];
+  for (const r of data.VXN) {
+    const v = vixMap.get(r.date);
+    if (v != null) out.push(r.close - v);
+  }
+  return out.slice(-n);
+}
+
+function anCard(id, title, badge, bodyHtml, readText) {
+  document.getElementById(id).innerHTML =
+    '<div class="an-title">' + title + '<span class="an-index">' + badge + '</span></div>' +
+    '<div class="an-body">' + bodyHtml + '</div>' +
+    '<div class="an-read"><span class="an-read-label">怎么读</span>' + readText + '</div>';
+}
+
+function renderPercentile() {
+  const rows = [];
+  for (const sym of ["VIX", "VXN"]) {
+    const arr = data[sym].map(r => r.close);
+    const cur = arr[arr.length - 1];
+    const p1 = Math.round(rankPct(arr.slice(-252), cur) * 100);
+    const p3 = Math.round(rankPct(arr, cur) * 100);
+    rows.push('<div><span class="sym">' + sym + '</span> 高于过去一年 <b>' + p1 + '%</b> 的交易日 · 近三年 <b>' + p3 + '%</b></div>');
+  }
+  anCard("an-percentile", "恐慌水平分位", "历史百分位", rows.join(""), "百分比=当前值比这段时间里多少交易日的收盘更高。&gt;80% 说明恐慌偏高，&lt;20% 说明异常平静。");
+}
+
+function renderDeviation() {
+  const rows = [];
+  for (const sym of ["VIX", "VXN"]) {
+    const arr = data[sym].map(r => r.close);
+    const cur = arr[arr.length - 1];
+    const m20 = ma(arr, 20), m50 = ma(arr, 50);
+    const d20 = (cur - m20) / m20 * 100;
+    const d50 = (cur - m50) / m50 * 100;
+    const cls = d50 >= 0 ? "up" : "down";
+    rows.push('<div><span class="sym">' + sym + '</span> 现价 <b>' + cur.toFixed(2) + '</b>，较 20 日均线 <span class="' + cls + '">' + (d20 >= 0 ? "+" : "") + d20.toFixed(1) + '%</span>，较 50 日均线 <span class="' + cls + '">' + (d50 >= 0 ? "+" : "") + d50.toFixed(1) + '%</span></div>');
+  }
+  anCard("an-deviation", "均值回归偏离", "偏离均线", rows.join(""), "波动率指数高度均值回归：偏离均线越远，越可能向均值回落。正值=情绪偏热，负值=情绪偏冷。");
+}
+
+function renderSpread() {
+  const vix = data.VIX.map(r => r.close);
+  const vxn = data.VXN.map(r => r.close);
+  const spread = vxn[vxn.length - 1] - vix[vix.length - 1];
+  const ratio = vxn[vxn.length - 1] / vix[vix.length - 1];
+  const sp = spreadSeries(365);
+  const med = median(sp), hi = Math.max(...sp), lo = Math.min(...sp);
+  const pos = (hi - lo) > 0 ? (spread - lo) / (hi - lo) * 100 : 0;
+  const body = '<div>价差（VXN−VIX）<b>' + spread.toFixed(2) + '</b> 点 · 比值 <b>' + ratio.toFixed(2) + '</b></div>' +
+    '<div class="sym">近一年价差：中位 ' + med.toFixed(1) + ' · 区间 ' + lo.toFixed(1) + '~' + hi.toFixed(1) + '，当前位于区间 ' + Math.round(pos) + '%</div>';
+  anCard("an-spread", "VIX/VXN 相对恐慌", "价差·比值", body, "价差通常为正（纳指波动率更高）。收窄/倒挂=科技股恐慌溢价被压缩、风险偏好上升；拉大=科技股相对更慌。");
+}
+
+function renderMomentum() {
+  const rows = [];
+  for (const sym of ["VIX", "VXN"]) {
+    const arr = data[sym].map(r => r.close);
+    const parts = [];
+    for (const [n, label] of [[1, "1日"], [5, "5日"], [20, "20日"]]) {
+      const c = chg(arr, n);
+      const cls = c >= 0 ? "up" : "down";
+      parts.push(label + ' <span class="' + cls + '">' + (c >= 0 ? "+" : "") + c.toFixed(1) + '%</span>');
+    }
+    rows.push('<div><span class="sym">' + sym + '</span> ' + parts.join(' · ') + '</div>');
+  }
+  anCard("an-momentum", "短期动量 · 冲高监测", "涨跌幅", rows.join(""), "正=恐慌升温，负=恐慌退潮。VIX 往往慢涨快跌；单日冲高 20% 以上通常对应市场急跌。");
+}
+
+function renderExtreme() {
+  const rows = [];
+  for (const sym of ["VIX", "VXN"]) {
+    const arr = data[sym].map(r => r.close);
+    const parts = [];
+    for (const [n, label] of [[30, "近30日"], [90, "近90日"], [365, "近1年"]]) {
+      const st = windowStats(arr, n);
+      parts.push(label + ' ' + st.lo.toFixed(1) + '~' + st.hi.toFixed(1) + '（现 <b>' + st.cur.toFixed(1) + '</b>，位于 ' + Math.round(st.pos) + '%）');
+    }
+    rows.push('<div><span class="sym">' + sym + '</span> ' + parts.join('<br>') + '</div>');
+  }
+  anCard("an-extreme", "近期极值与回撤位置", "区间位置", rows.join(""), "位置越高=越接近近期最恐慌水平，越低=越接近近期最平静，用来判断离极端还有多远。");
+}
+
+function pearson(xs, ys) {
+  const n = Math.min(xs.length, ys.length);
+  if (n < 20) return null;
+  let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  for (let i = 0; i < n; i++) {
+    sx += xs[i]; sy += ys[i];
+    sxx += xs[i] * xs[i]; syy += ys[i] * ys[i]; sxy += xs[i] * ys[i];
+  }
+  const d = Math.sqrt((n * sxx - sx * sx) * (n * syy - sy * sy));
+  return d === 0 ? null : (n * sxy - sx * sy) / d;
+}
+
+function chgIdx(key, n) {
+  const arr = data[key];
+  const l = arr[arr.length - 1].close, p = arr[arr.length - 1 - n].close;
+  return (l - p) / p * 100;
+}
+
+function linkageCorr(indexKey, volKey, n) {
+  const idx = data[indexKey], vol = data[volKey];
+  const volMap = new Map(vol.map(r => [r.date, r.close]));
+  const ir = [], vr = [];
+  for (let i = 1; i < idx.length; i++) {
+    const v = volMap.get(idx[i].date), vp = volMap.get(idx[i - 1].date);
+    if (v == null || vp == null || vp === 0 || idx[i - 1].close === 0) continue;
+    ir.push(idx[i].close / idx[i - 1].close - 1);
+    vr.push(v / vp - 1);
+  }
+  return pearson(ir.slice(-n), vr.slice(-n));
+}
+
+function renderSummary() {
+  const vix = data.VIX.map(r => r.close);
+  const vxn = data.VXN.map(r => r.close);
+  const vixCur = vix[vix.length - 1], vxnCur = vxn[vxn.length - 1];
+  const p1 = Math.round(rankPct(vix.slice(-252), vixCur) * 100);
+  const vix5 = chg(vix, 5);
+  const d50 = (vixCur - ma(vix, 50)) / ma(vix, 50) * 100;
+  const ratio = vxnCur / vixCur;
+
+  let mood;
+  if (p1 < 20 && vix5 < 0) mood = "平静偏暖";
+  else if (p1 < 20) mood = "平静";
+  else if (p1 > 80 && vix5 > 0) mood = "恐慌升温";
+  else if (p1 > 80) mood = "高位恐慌";
+  else if (vix5 > 10) mood = "短期升温";
+  else if (vix5 < -10) mood = "短期退潮";
+  else mood = "中性";
+
+  const pos = p1 < 20 ? "历史低位、市场平静" : (p1 > 80 ? "历史高位、市场紧张" : "历史中位区间");
+  const sign = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
+  const cls = v => v >= 0 ? "up" : "down";
+  document.getElementById("an-summary").innerHTML =
+    '<div class="summary-title">情绪总览</div>' +
+    '<div class="summary-body">当前情绪<b>「' + mood + '」</b>：VIX <b>' + vixCur.toFixed(2) + '</b> 处于近一年 <b>' + p1 + '%</b> 分位，较 50 日均线 <span class="' + cls(d50) + '">' + sign(d50) + '</span>，近 5 日 <span class="' + cls(vix5) + '">' + sign(vix5) + '</span>；VXN/VIX 比值 <b>' + ratio.toFixed(2) + '</b>。整体波动处于' + pos + '。</div>';
+}
+
+function renderLinkage() {
+  if (!data.SPX || data.SPX.length < 20 || !data.NDX || data.NDX.length < 20) {
+    anCard("an-linkage", "大盘联动 · 负相关", "标普/纳指",
+      '<div class="sym">指数数据暂缺，将在首次 GitHub 自动更新后显示。</div>',
+      "VIX 与标普强负相关（约 −0.7~−0.8）：股市下跌推升恐慌，这是 VIX 最核心的驱动。");
+    return;
+  }
+  const spxCorr = linkageCorr("SPX", "VIX", 252);
+  const ndxCorr = linkageCorr("NDX", "VXN", 252);
+  const spx5 = chgIdx("SPX", 5), vix5 = chgIdx("VIX", 5);
+  const spx20 = chgIdx("SPX", 20), vix20 = chgIdx("VIX", 20);
+  const sgn = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
+  const cls = v => v >= 0 ? "up" : "down";
+  const body =
+    '<div>近一年日涨跌相关系数：标普↔VIX <b>' + (spxCorr == null ? "—" : spxCorr.toFixed(2)) + '</b> · 纳指↔VXN <b>' + (ndxCorr == null ? "—" : ndxCorr.toFixed(2)) + '</b></div>' +
+    '<div class="sym">近5日：标普 <span class="' + cls(spx5) + '">' + sgn(spx5) + '</span> / VIX <span class="' + cls(vix5) + '">' + sgn(vix5) + '</span></div>' +
+    '<div class="sym">近20日：标普 <span class="' + cls(spx20) + '">' + sgn(spx20) + '</span> / VIX <span class="' + cls(vix20) + '">' + sgn(vix20) + '</span></div>';
+  anCard("an-linkage", "大盘联动 · 负相关", "标普/纳指", body, "相关系数越接近 −1，负相关越强（大盘跌→VIX 涨越同步）。近5/20日涨跌用来验证这种负相关是否正在发生。");
+}
+
+function renderCause() {
+  const vix = data.VIX.map(r => r.close);
+  const vxn = data.VXN.map(r => r.close);
+  const vixCur = vix[vix.length - 1], vxnCur = vxn[vxn.length - 1];
+  const p1 = Math.round(rankPct(vix.slice(-252), vixCur) * 100);
+  const vix5 = chg(vix, 5);
+  const ratio = vxnCur / vixCur;
+  const ratios = [];
+  for (let i = 0; i < Math.min(vix.length, vxn.length); i++) ratios.push(vxn[i] / vix[i]);
+  const rMed = median(ratios.slice(-365));
+  const sgn = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
+
+  const lines = [];
+  if (data.SPX && data.SPX.length > 20) {
+    const spx5 = chgIdx("SPX", 5);
+    if (spx5 < 0 && vix5 > 0) lines.push("近5日标普500 <b>" + sgn(spx5) + "</b> 而 VIX 上涨——大盘下跌推升恐慌，这是 VIX 最核心的负相关驱动。");
+    else if (spx5 > 0 && vix5 < 0) lines.push("近5日标普500 <b>" + sgn(spx5) + "</b> 且 VIX 回落——风险偏好回升、恐慌退潮。");
+    else lines.push("近5日标普500 <b>" + sgn(spx5) + "</b>、VIX 变动不大，市场在消化阶段性信息。");
+  }
+  if (p1 < 20) lines.push("VIX 处于近一年 <b>" + p1 + "%</b> 分位的历史低位，波动被持续压制——典型于宏观数据平稳、财报季无重大意外、政策预期稳定。");
+  else if (p1 > 80) lines.push("VIX 处于近一年 <b>" + p1 + "%</b> 分位的高位，恐慌高企——典型于大盘急跌、宏观/地缘冲击、对冲需求激增。");
+  else lines.push("VIX 处于近一年 <b>" + p1 + "%</b> 分位的中位区间，波动处于常态。");
+  if (ratio > rMed * 1.05) lines.push("VXN/VIX 比值 <b>" + ratio.toFixed(2) + "</b> 高于近一年中位 <b>" + rMed.toFixed(2) + "</b>，科技股相对更慌（对利率与财报更敏感）。");
+  else if (ratio < rMed * 0.95) lines.push("VXN/VIX 比值 <b>" + ratio.toFixed(2) + "</b> 低于近一年中位 <b>" + rMed.toFixed(2) + "</b>，科技股恐慌溢价被压缩、风险偏好上升。");
+  else lines.push("VXN/VIX 比值 <b>" + ratio.toFixed(2) + "</b> 位于近一年中位附近，科技股与大盘恐慌同步。");
+
+  anCard("an-cause", "为什么现在是这个水平", "成因解读", lines.map(l => "<div>· " + l + "</div>").join(""), "基于数据规律的推断（非实时新闻归因）：把当前分位、动量、价差、大盘联动翻译成驱动因素。");
+}
+
 function render() {
   if (!data) return;
   renderTiles();
   renderLegend();
   renderChart();
   renderTable();
+  renderAnalysis();
   renderUpdated();
 }
 

@@ -35,10 +35,14 @@ python -m http.server 8000
 
 > 注：GitHub 对连续 60 天无活动的仓库会暂停定时任务。看板一直在访问就是有活动；若很久没更新，去 Actions 页手动跑一次即可。
 
-## 数据来源（官方）
+## 数据来源
 
-- VIX：https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv
-- VXN：https://cdn.cboe.com/api/global/us_indices/daily_prices/VXN_History.csv
+- VIX / VXN：Cboe 官方 CSV（`https://cdn.cboe.com/api/global/us_indices/daily_prices/{VIX,VXN}_History.csv`）
+- SPX / NDX：FRED（`SP500` / `NASDAQ100`，美国站，GitHub Actions 上稳定）；失败时兜底东方财富（`100.SPX` / `100.NDX100`）
+
+## 分析板块
+
+页面包含：恐慌水平分位、均值回归偏离、价差/比值、短期动量、极值区间，以及情绪总览、大盘联动（负相关与相关系数）、成因解读。逻辑见 `index.html` 内 `renderAnalysis()` 及各 `renderXxx()` 函数。
 
 ## 调整恐慌阈值
 
