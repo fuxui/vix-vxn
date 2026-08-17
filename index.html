@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIX · VXN 恐慌指数</title>
+<style>
+  :root { color-scheme: light; }
+  .viz-root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --gridline: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --good: #006300;
+    --bad: #d03b3b;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) .viz-root {
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted: #898781;
+      --gridline: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --good: #0ca30c;
+      --bad: #e66767;
+      color-scheme: dark;
+    }
+  }
+  html[data-theme="dark"] .viz-root {
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --gridline: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --good: #0ca30c;
+    --bad: #e66767;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .viz-root { min-height: 100vh; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 48px; }
+
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  h1 { font-size: 22px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+  .meta { text-align: right; color: var(--text-secondary); font-size: 13px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  #theme-btn {
+    font: inherit; font-size: 13px; color: var(--text-secondary);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 4px 12px; cursor: pointer;
+  }
+  #theme-btn:hover { color: var(--text-primary); }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 24px 0; }
+  .stat-tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .tile-label { font-size: 13px; color: var(--text-secondary); }
+  .tile-value { font-size: 40px; font-weight: 650; letter-spacing: -0.02em; margin: 4px 0 2px; }
+  .tile-delta { font-size: 14px; }
+  .tile-delta.up { color: var(--bad); }
+  .tile-delta.down { color: var(--good); }
+  .tile-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--text-secondary); }
+  .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .chip-calm .chip-dot { background: #0ca30c; }
+  .chip-elevated .chip-dot { background: #fab219; }
+  .chip-fear .chip-dot { background: #ec835a; }
+  .chip-extreme .chip-dot { background: #d03b3b; }
+
+  .filter-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 12px; flex-wrap: wrap; }
+  .legend { display: flex; gap: 18px; font-size: 13px; color: var(--text-secondary); }
+  .legend-item { display: inline-flex; align-items: center; gap: 7px; }
+  .legend-key { width: 16px; height: 2px; border-radius: 1px; }
+  .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .segmented button {
+    font: inherit; font-size: 13px; color: var(--text-secondary);
+    background: transparent; border: none; padding: 6px 14px; cursor: pointer;
+  }
+  .segmented button + button { border-left: 1px solid var(--border); }
+  .segmented button.active { background: var(--text-primary); color: var(--page); }
+
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 12px 8px; position: relative; }
+  .chart { width: 100%; min-height: 340px; }
+  .chart svg { display: block; }
+  .empty { color: var(--muted); padding: 60px 20px; text-align: center; }
+
+  .tooltip {
+    position: absolute; pointer-events: none; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 11px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    min-width: 150px;
+  }
+  .tooltip[hidden] { display: none; }
+  .tt-date { color: var(--muted); font-size: 12px; margin-bottom: 5px; }
+  .tt-row { display: flex; align-items: center; gap: 7px; padding: 1px 0; }
+  .tt-key { width: 13px; height: 2px; border-radius: 1px; flex: none; }
+  .tt-name { color: var(--text-secondary); flex: 1; }
+  .tt-row strong { font-variant-numeric: tabular-nums; }
+
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 4px 4px; margin-top: 16px; overflow-x: auto; }
+  .table-card h2 { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin: 8px 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 7px 16px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--gridline); }
+  tbody tr { border-bottom: 1px solid var(--gridline); }
+  tbody tr:last-child { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; }
+  td .d { font-size: 12px; }
+  td .d.up { color: var(--bad); }
+  td .d.down { color: var(--good); }
+
+  footer { margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+  footer a { color: var(--text-secondary); }
+
+  @media (max-width: 520px) {
+    .tile-value { font-size: 34px; }
+    header { flex-direction: column; }
+    .meta { align-items: flex-start; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <div class="wrap">
+    <header>
+      <h1>VIX · VXN 恐慌指数</h1>
+      <div class="meta">
+        <span id="updated">加载中…</span>
+        <button id="theme-btn" type="button" aria-label="切换深浅色">🌓 切换</button>
+      </div>
+    </header>
+
+    <section class="kpi-row" aria-label="当前指数">
+      <div class="stat-tile" id="tile-VIX"></div>
+      <div class="stat-tile" id="tile-VXN"></div>
+    </section>
+
+    <div class="filter-row">
+      <div class="legend" id="legend" aria-hidden="true"></div>
+      <div class="segmented" role="group" aria-label="时间范围">
+        <button data-range="30">30天</button>
+        <button data-range="90" class="active">90天</button>
+        <button data-range="180">6个月</button>
+        <button data-range="365">1年</button>
+      </div>
+    </div>
+
+    <section class="chart-card">
+      <div class="chart" id="chart"></div>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </section>
+
+    <section class="table-card">
+      <h2>最近交易日明细</h2>
+      <table id="recent-table">
+        <thead>
+          <tr><th>日期</th><th>VIX</th><th class="num">涨跌</th><th>VXN</th><th class="num">涨跌</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <footer>
+      数据来源：Cboe 官方每日收盘数据（VIX / VXN），每天北京时间 06:00 自动更新。<br>
+      恐慌分级阈值：VIX 20 / 30 / 40；VXN 22 / 32 / 42（平静 · 偏高 · 恐慌 · 极端）。可在 index.html 顶部 <code>CONFIG.thresholds</code> 中调整。
+    </footer>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const CONFIG = {
+  thresholds: {
+    VIX: { calm: 20, elevated: 30, fear: 40 },
+    VXN: { calm: 22, elevated: 32, fear: 42 }
+  }
+};
+
+const STATUS = { calm: "平静", elevated: "偏高", fear: "恐慌", extreme: "极端" };
+
+let data = null;
+let range = 90;
+
+function cssVar(name) {
+  return getComputedStyle(document.querySelector(".viz-root")).getPropertyValue(name).trim();
+}
+
+function classify(sym, v) {
+  const t = CONFIG.thresholds[sym];
+  if (v < t.calm) return "calm";
+  if (v < t.elevated) return "elevated";
+  if (v < t.fear) return "fear";
+  return "extreme";
+}
+
+function fmtDelta(delta, pct) {
+  const sign = delta >= 0 ? "+" : "";
+  const arrow = delta >= 0 ? "▲" : "▼";
+  return `${arrow} ${sign}${delta.toFixed(2)}（${sign}${pct.toFixed(1)}%）`;
+}
+
+function renderTiles() {
+  for (const sym of ["VIX", "VXN"]) {
+    const arr = data[sym];
+    const last = arr[arr.length - 1];
+    const prev = arr[arr.length - 2];
+    const delta = last.close - prev.close;
+    const pct = prev.close ? (delta / prev.close) * 100 : 0;
+    const st = classify(sym, last.close);
+    const label = sym === "VIX" ? "VIX · 标普500恐慌指数" : "VXN · 纳斯达克恐慌指数";
+    const dir = delta >= 0 ? "up" : "down";
+    document.getElementById("tile-" + sym).innerHTML =
+      '<div class="tile-label">' + label + '</div>' +
+      '<div class="tile-value">' + last.close.toFixed(2) + '</div>' +
+      '<div class="tile-foot">' +
+        '<span class="tile-delta ' + dir + '">' + fmtDelta(delta, pct) + '</span>' +
+        '<span class="chip chip-' + st + '"><span class="chip-dot"></span>' + STATUS[st] + '</span>' +
+      '</div>';
+  }
+}
+
+function niceTicks(min, max, count) {
+  if (max <= min) max = min + 1;
+  const span = max - min;
+  const step0 = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const norm = step0 / mag;
+  let step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  step *= mag;
+  const start = Math.ceil(min / step) * step;
+  const out = [];
+  for (let v = start; v <= max + 1e-9; v += step) out.push(Math.round(v * 100) / 100);
+  return out;
+}
+function fmtTick(v) { return Number.isInteger(v) ? String(v) : v.toFixed(1); }
+function pickXTicks(n, maxTicks) {
+  if (n <= 2) return Array.from({ length: n }, (_, i) => i);
+  const count = Math.min(maxTicks, n);
+  const s = new Set([0, n - 1]);
+  for (let k = 1; k < count - 1; k++) s.add(Math.round(k * (n - 1) / (count - 1)));
+  return [...s].sort((a, b) => a - b);
+}
+function fmtAxis(iso) { const p = iso.split("-"); return (+p[1]) + "/" + (+p[2]); }
+function fmtDateFull(iso) { const p = iso.split("-"); return p[0] + "年" + (+p[1]) + "月" + (+p[2]) + "日"; }
+
+function linePath(dates, map, x, y, color) {
+  let d = "", pen = false;
+  for (let i = 0; i < dates.length; i++) {
+    const v = map.get(dates[i]);
+    if (v == null) { pen = false; continue; }
+    d += (pen ? "L" : "M") + x(i).toFixed(2) + "," + y(v).toFixed(2);
+    pen = true;
+  }
+  return '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+}
+
+function renderChart() {
+  const el = document.getElementById("chart");
+  if (!data) return;
+
+  const dates = data.VIX.map(r => r.date);
+  const vixMap = new Map(data.VIX.map(r => [r.date, r.close]));
+  const vxnMap = new Map(data.VXN.map(r => [r.date, r.close]));
+  const slice = dates.slice(-range);
+  const n = slice.length;
+
+  if (n < 2) { el.innerHTML = '<p class="empty">数据不足，无法绘图</p>'; return; }
+
+  const s1 = cssVar("--series-1"), s2 = cssVar("--series-2");
+  const gridC = cssVar("--gridline"), axisC = cssVar("--axis"), mutedC = cssVar("--muted");
+  const textC = cssVar("--text-primary"), surfaceC = cssVar("--surface");
+
+  const W = el.clientWidth || 800;
+  const H = 340;
+  const m = { top: 16, right: 66, bottom: 28, left: 46 };
+  const pw = W - m.left - m.right;
+  const ph = H - m.top - m.bottom;
+
+  let lo = Infinity, hi = -Infinity;
+  for (const d of slice) {
+    const a = vixMap.get(d), b = vxnMap.get(d);
+    if (a != null) { lo = Math.min(lo, a); hi = Math.max(hi, a); }
+    if (b != null) { lo = Math.min(lo, b); hi = Math.max(hi, b); }
+  }
+  const pad = Math.max((hi - lo) * 0.12, 0.5);
+  lo -= pad; hi += pad;
+
+  const x = i => m.left + (n <= 1 ? pw / 2 : (i / (n - 1)) * pw);
+  const y = v => m.top + ((hi - v) / (hi - lo)) * ph;
+
+  let s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="VIX 与 VXN 近 ' + range + ' 日走势">';
+
+  for (const t of niceTicks(lo, hi, 5)) {
+    const ty = y(t);
+    s += '<line x1="' + m.left + '" y1="' + ty + '" x2="' + (m.left + pw) + '" y2="' + ty + '" stroke="' + gridC + '" stroke-width="1"/>';
+    s += '<text x="' + (m.left - 8) + '" y="' + (ty + 4) + '" text-anchor="end" font-size="12" fill="' + mutedC + '">' + fmtTick(t) + '</text>';
+  }
+  for (const i of pickXTicks(n, 6)) {
+    s += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="12" fill="' + mutedC + '">' + fmtAxis(slice[i]) + '</text>';
+  }
+  s += '<line x1="' + m.left + '" y1="' + (m.top + ph) + '" x2="' + (m.left + pw) + '" y2="' + (m.top + ph) + '" stroke="' + axisC + '" stroke-width="1"/>';
+
+  s += linePath(slice, vixMap, x, y, s1);
+  s += linePath(slice, vxnMap, x, y, s2);
+
+  // end dots + labels
+  const lastVix = vixMap.get(slice[n - 1]);
+  const lastVxn = vxnMap.get(slice[n - 1]);
+  const ex = x(n - 1);
+  s += '<circle cx="' + ex + '" cy="' + y(lastVix) + '" r="4" fill="' + s1 + '" stroke="' + surfaceC + '" stroke-width="2"/>';
+  s += '<circle cx="' + ex + '" cy="' + y(lastVxn) + '" r="4" fill="' + s2 + '" stroke="' + surfaceC + '" stroke-width="2"/>';
+  s += '<text x="' + (ex + 9) + '" y="' + (y(lastVix) + 4) + '" font-size="12" font-weight="600" fill="' + textC + '">' + lastVix.toFixed(2) + '</text>';
+  s += '<text x="' + (ex + 9) + '" y="' + (y(lastVxn) + 4) + '" font-size="12" font-weight="600" fill="' + textC + '">' + lastVxn.toFixed(2) + '</text>';
+
+  // crosshair layer
+  s += '<g id="crosshair" style="display:none">'
+    + '<line id="ch-line" stroke="' + mutedC + '" stroke-width="1"/>'
+    + '<circle id="ch-c1" r="4" fill="' + s1 + '" stroke="' + surfaceC + '" stroke-width="2"/>'
+    + '<circle id="ch-c2" r="4" fill="' + s2 + '" stroke="' + surfaceC + '" stroke-width="2"/>'
+    + '</g>';
+  s += '<rect id="hover" x="' + m.left + '" y="' + m.top + '" width="' + pw + '" height="' + ph + '" fill="transparent" style="cursor:crosshair"/>';
+  s += '</svg>';
+
+  el.innerHTML = s;
+
+  const svg = el.querySelector("svg");
+  const ch = el.querySelector("#crosshair");
+  const chLine = el.querySelector("#ch-line");
+  const chC1 = el.querySelector("#ch-c1");
+  const chC2 = el.querySelector("#ch-c2");
+  const hover = el.querySelector("#hover");
+  const tip = document.getElementById("tooltip");
+  const card = el.closest(".chart-card");
+
+  function showAt(clientX, clientY) {
+    const svgRect = svg.getBoundingClientRect();
+    const px = clientX - svgRect.left;
+    const py = clientY - svgRect.top;
+    let i = Math.round(((px - m.left) / pw) * (n - 1));
+    i = Math.max(0, Math.min(n - 1, i));
+    const xp = x(i);
+    const date = slice[i];
+    const v1 = vixMap.get(date), v2 = vxnMap.get(date);
+
+    ch.style.display = "";
+    chLine.setAttribute("x1", xp); chLine.setAttribute("y1", m.top);
+    chLine.setAttribute("x2", xp); chLine.setAttribute("y2", m.top + ph);
+    chC1.setAttribute("cx", xp); chC1.setAttribute("cy", v1 == null ? 0 : y(v1));
+    chC2.setAttribute("cx", xp); chC2.setAttribute("cy", v2 == null ? 0 : y(v2));
+    chC1.style.display = v1 == null ? "none" : "";
+    chC2.style.display = v2 == null ? "none" : "";
+
+    tip.innerHTML = "";
+    const td = document.createElement("div"); td.className = "tt-date"; td.textContent = fmtDateFull(date); tip.appendChild(td);
+    for (const [nm, val, color] of [["VIX", v1, s1], ["VXN", v2, s2]]) {
+      const row = document.createElement("div"); row.className = "tt-row";
+      const key = document.createElement("span"); key.className = "tt-key"; key.style.background = color;
+      const name = document.createElement("span"); name.className = "tt-name"; name.textContent = nm;
+      const value = document.createElement("strong"); value.textContent = val == null ? "—" : val.toFixed(2);
+      row.append(key, name, value); tip.appendChild(row);
+    }
+    tip.hidden = false;
+
+    const cardRect = card.getBoundingClientRect();
+    let tx = clientX - cardRect.left + 14;
+    let ty = clientY - cardRect.top - 10;
+    if (tx + 170 > cardRect.width) tx = clientX - cardRect.left - 170;
+    if (ty < 4) ty = 4;
+    tip.style.left = tx + "px";
+    tip.style.top = ty + "px";
+  }
+
+  hover.addEventListener("pointermove", e => showAt(e.clientX, e.clientY));
+  hover.addEventListener("pointerleave", () => { ch.style.display = "none"; tip.hidden = true; });
+}
+
+function renderLegend() {
+  const s1 = cssVar("--series-1"), s2 = cssVar("--series-2");
+  document.getElementById("legend").innerHTML =
+    '<span class="legend-item"><span class="legend-key" style="background:' + s1 + '"></span>VIX</span>' +
+    '<span class="legend-item"><span class="legend-key" style="background:' + s2 + '"></span>VXN</span>';
+}
+
+function renderTable() {
+  const tbody = document.querySelector("#recent-table tbody");
+  const arr = data.VIX;
+  const n = Math.min(14, arr.length);
+  let html = "";
+  for (let i = arr.length - 1; i >= arr.length - n; i--) {
+    const vix = data.VIX[i], vxn = data.VXN[i];
+    const vixD = i > 0 ? vix.close - data.VIX[i - 1].close : 0;
+    const vxnD = i > 0 ? vxn.close - data.VXN[i - 1].close : 0;
+    const vixDir = vixD >= 0 ? "up" : "down";
+    const vxnDir = vxnD >= 0 ? "up" : "down";
+    html += '<tr>'
+      + '<td>' + fmtAxis(vix.date) + '</td>'
+      + '<td class="num">' + vix.close.toFixed(2) + '</td>'
+      + '<td class="num"><span class="d ' + vixDir + '">' + (vixD >= 0 ? "+" : "") + vixD.toFixed(2) + '</span></td>'
+      + '<td class="num">' + vxn.close.toFixed(2) + '</td>'
+      + '<td class="num"><span class="d ' + vxnDir + '">' + (vxnD >= 0 ? "+" : "") + vxnD.toFixed(2) + '</span></td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function renderUpdated() {
+  const last = data.VIX[data.VIX.length - 1].date;
+  let upd = "";
+  if (data.updated) {
+    const d = new Date(data.updated);
+    upd = "更新 " + d.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  document.getElementById("updated").textContent = "数据截至 " + fmtDateFull(last) + (upd ? " · " + upd : "");
+}
+
+function render() {
+  if (!data) return;
+  renderTiles();
+  renderLegend();
+  renderChart();
+  renderTable();
+  renderUpdated();
+}
+
+function showError(msg) {
+  document.getElementById("chart").innerHTML = '<p class="empty">' + msg + '</p>';
+  document.getElementById("updated").textContent = msg;
+}
+
+async function load() {
+  try {
+    const res = await fetch("data/history.json?v=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    data = await res.json();
+    render();
+  } catch (e) {
+    showError("数据加载失败（请通过 http 服务访问，见 README）");
+    console.error(e);
+  }
+}
+
+// theme
+let theme = localStorage.getItem("vix-theme") || "auto";
+function applyTheme() {
+  if (theme === "light") document.documentElement.setAttribute("data-theme", "light");
+  else if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+  render();
+}
+document.getElementById("theme-btn").addEventListener("click", () => {
+  const dark = (theme === "dark") || (theme !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  theme = dark ? "light" : "dark";
+  localStorage.setItem("vix-theme", theme);
+  applyTheme();
+});
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (theme === "auto") render(); });
+
+// range control
+const rangeBtns = document.querySelectorAll(".segmented button");
+rangeBtns.forEach(b => b.addEventListener("click", () => {
+  range = parseInt(b.dataset.range, 10);
+  rangeBtns.forEach(x => x.classList.toggle("active", x === b));
+  renderChart();
+}));
+
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderChart, 150);
+});
+
+applyTheme();
+load();
+</script>
+</body>
+</html>
