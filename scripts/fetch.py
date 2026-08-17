@@ -4,13 +4,17 @@
 - VIX/VXN：Cboe 官方 CSV，权威、免 key、中美皆可访问。
 - SPX/NDX：优先 FRED（SP500 / NASDAQ100，美国站，GitHub Actions 上稳定）；失败时兜底
   东方财富（100.SPX / 100.NDX100，国内可访问）。两者都失败则复用上次数据，不让更新整体失败。
+- 日历校准：Cboe 的 VIX_History.csv 会在美国休市日（感恩节、马丁路德金日等）多带一行
+  “幽灵”数据，而 VXN_History.csv 不带（反过来 VXN 在 2021-04-02 等个别休市日也多了两行）。
+  直接各取后 750 行会导致两条曲线在这些休市日错位、VXN 线断开。这里先取两份 CSV 日期的
+  交集做校准，保证同一交易日历，曲线不再断裂，VIX 也补回到与 VXN 相同的起始日期。
 纯标准库，无需 pip install。
 """
 
-import csv
 import json
 import os
 import sys
+import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -26,10 +30,19 @@ EM_BEG = "20230101"
 KEEP_DAYS = 750  # ~3 年交易日，覆盖 1 年视图且 JSON 不大
 
 
-def http_get(url, timeout=60):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read().decode("utf-8")
+def http_get(url, timeout=60, retries=3):
+    """带重试的 GET。FRED 有频率限制（连续两个请求偶发 429/连接重置），
+    重试可显著减少 NDX 掉数据的情况。"""
+    last_err = None
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read().decode("utf-8")
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            time.sleep(2 * (attempt + 1))
+    raise last_err
 
 
 def fetch_cboe(symbol):
@@ -44,7 +57,20 @@ def fetch_cboe(symbol):
             rows.append({"date": d.isoformat(), "close": round(float(p[4]), 2)})
         except ValueError:
             continue
-    return rows[-KEEP_DAYS:]
+    return rows  # 全量历史，交给 align_calendar 校准后再截取
+
+
+def align_calendar(a, b):
+    """取两条序列日期的交集，去掉休市日“幽灵”行，保证同一交易日历。
+
+    Cboe 的两份 CSV 各自在少数美国休市日带了一行数据且互不重叠（VIX 多、VXN 少）。
+    做交集后两边日期完全一致，画图不会在休市日断开。
+    """
+    b_dates = {r["date"] for r in b}
+    a_aligned = [r for r in a if r["date"] in b_dates]
+    a_dates = {r["date"] for r in a_aligned}
+    b_aligned = [r for r in b if r["date"] in a_dates]
+    return a_aligned, b_aligned
 
 
 def fetch_fred(series_id):
@@ -90,6 +116,9 @@ def main():
     # 核心：Cboe VIX/VXN（失败则整体失败，让 Actions 标记失败）
     vix = fetch_cboe("VIX")
     vxn = fetch_cboe("VXN")
+    vix, vxn = align_calendar(vix, vxn)
+    vix = vix[-KEEP_DAYS:]
+    vxn = vxn[-KEEP_DAYS:]
     print(f"VIX: {len(vix)} rows, latest {vix[-1]}")
     print(f"VXN: {len(vxn)} rows, latest {vxn[-1]}")
 
@@ -114,12 +143,12 @@ def main():
         try:
             rows = fetch_fred(FRED_SOURCES[key])
             print(f"{key}: FRED {len(rows)} rows, latest {rows[-1]}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"{key}: FRED 失败({type(e).__name__})，尝试东方财富…")
             try:
                 rows = fetch_eastmoney(EM_SOURCES[key])
                 print(f"{key}: Eastmoney {len(rows)} rows, latest {rows[-1]}")
-            except Exception as e2:
+            except Exception as e2:  # noqa: BLE001
                 print(f"{key}: Eastmoney 也失败({type(e2).__name__})")
         if rows:
             payload[key] = rows
